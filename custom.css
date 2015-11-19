@@ -1,0 +1,72 @@
+/* container defines margins and width */
+.container {
+	max-width: 430px;
+	margin: 0 auto;
+}
+
+h1 {
+	font-family: "Arial", Arial, sans-serif;
+	font-size: 64px;
+	margin: 5%;
+	display: inline-block;
+}
+
+.btn-group{
+	margin-top: 10%;
+	margin-right: 20%;
+	float: right;
+}
+
+/* outer container will define aspect ratio */
+.board {
+	border: 10px solid #BBADA0;
+	border-radius: 10px;
+    position: relative;
+    width: 100%;
+    padding-top: 100%;
+    background-color: #CDC1B4;
+}
+
+/* inner container positioned absolutely and holds content */
+.inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.tile {
+    /*outline: 5px solid #bbada0;*/
+    width: 100px;
+    height: 100px;
+    float: left;
+    color: #776E65;
+}
+
+.number {
+	width: inherit;
+	height: inherit;
+	border: 0px;
+	font-family: Impact, sans-serif;
+    font-size: 48px;
+	text-align: center;
+    vertical-align: middle;
+    line-height: 100px;
+}
+
+.left-border {
+	border-right: 10px solid #BBADA0;
+}
+
+.right-border {
+	border-left: 10px solid #BBADA0;
+}
+
+.top-border {
+	border-bottom: 10px solid #BBADA0;
+}
+
+.bottom-border {
+	border-top: 10px solid #BBADA0;
+}
