@@ -9,16 +9,29 @@ h1 {
 	font-size: 64px;
 	margin: 5%;
 	display: inline-block;
+	color: #776E65;
 }
 
-.btn-group{
+.description {
+	display: inline-block;
+}
+
+.start-button {
+	float: right;
+}
+
+.score-container {
 	margin-top: 10%;
 	margin-right: 20%;
 	float: right;
 }
 
+.moves-counter { 
+}
+
 /* outer container will define aspect ratio */
 .board {
+	margin-top: 10%;
 	border: 10px solid #BBADA0;
 	border-radius: 10px;
     position: relative;

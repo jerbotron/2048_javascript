@@ -4,10 +4,10 @@
 $(document).ready(function() {
 	var gameBoard = new Board();
 	var gameStart = false;
+	gameBoard.beginGame();
 
 	$('button').click(function() {
 		gameBoard.beginGame();
-		gameBoard.printBoard();
 		gameStart = true;
 	});
 
@@ -15,28 +15,25 @@ $(document).ready(function() {
 		if (gameStart) {
 	    	switch(event.which) {
 	    		case 37: 							// left
-	    		console.log("left pressed");
-	    		gameBoard.move(0);
-	    		break;
+	    			gameBoard.move(0);
+	    			break;
 
 	    		case 38: 							// up
-	    		console.log("up pressed");
-	    		gameBoard.move(1);
-	    		break;
+		    		gameBoard.move(1);
+		    		break;
 
 	    		case 39: 							// right
-	    		console.log("right pressed");
-	    		gameBoard.move(2);
-	    		break;
+		    		gameBoard.move(2);
+		    		break;
 
 	    		case 40: 							// down
-	    		console.log("down pressed");
-	    		gameBoard.move(3);
-	    		break;
+		    		gameBoard.move(3);
+		    		break;
 
-	    		default: return;
+	    		default: break;;
 	    	}
-	    	gameBoard.printBoard();
+	    	document.getElementsByClassName('moves-counter')[0].innerHTML = gameBoard.numberOfMoves;
+	    	// gameBoard.printBoard(gameBoard.boardMatrix);
 	    }
 	});
 });
@@ -60,21 +57,28 @@ var getRandomNumber = function(n) {
 	return Math.floor(Math.random() * n);
 };
 
+var BOARD_LENGTH = 16;
+
 //----- Board Class -----//
 function Board() {
 	this.boardMatrix = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 	this.prev_boardMatrix = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-	this.numOfMoves = 0;
+	this.numberOfMoves = 0;
 };
 
-Board.prototype.printBoard = function() {
-	console.log(this.boardMatrix.slice(0,4));
-	console.log(this.boardMatrix.slice(4,8));
-	console.log(this.boardMatrix.slice(8,12));
-	console.log(this.boardMatrix.slice(12,16));
-	// for (var y = 0; y < 4; ++y) {
-	// 	console.log(this.boardMatrix.slice(0*y,4*(y+1)));
-	// }
+Board.prototype.compareMatrix = function(m) {
+	if (m.length != BOARD_LENGTH) { return false; }
+	for (var i = 0; i < BOARD_LENGTH; ++i) {
+		if (this.boardMatrix[i] != m[i]) { return false; }
+	}
+	return true;
+}
+
+Board.prototype.printBoard = function(m) {
+	console.log(m.slice(0,4));
+	console.log(m.slice(4,8));
+	console.log(m.slice(8,12));
+	console.log(m.slice(12,16));
 }
 
 Board.prototype.clearBoard = function() {
@@ -86,9 +90,8 @@ Board.prototype.clearBoard = function() {
 };
 
 Board.prototype.updateBoard = function() {
-	console.log("updating board");
 	this.clearBoard();
-	for (var i = 0; i < this.boardMatrix.length; ++i) {
+	for (var i = 0; i < BOARD_LENGTH; ++i) {
 		if (this.boardMatrix[i] != 0) {
 			this.updateTile(i);
 		}
@@ -98,26 +101,22 @@ Board.prototype.updateBoard = function() {
 Board.prototype.updateTile = function(tile_number) {
 	var children = document.getElementsByClassName('inner')[0].children;
 	var tile = children[tile_number].firstChild;
-	// if (tile.innerHTML == '') { var n = (getRandomNumber(2)+1) * 2;}
-	// else { var n = tile.innerHTML * 2; }
 	var n = this.boardMatrix[tile_number];
 	tile.style.backgroundColor = colorHash[n];
-	if (n > 4) {
-		console.log("white");
-		tile.style.color = 'white';
-	}
-	if (n > 1000) {
-		tile.style.fontSize = '38px';
-	}
-	else if (n > 100) {
-		tile.style.fontSize = '42px';
-	}
+	if (n > 4) { tile.style.color = 'white'; }
+	else { tile.style.color = '#776E65'; }
+
+	if (n > 1000) { tile.style.fontSize = '38px'; }
+	else if (n > 100) {	tile.style.fontSize = '42px'; }
+
 	tile.innerHTML = n;
 };
 
 Board.prototype.beginGame = function() {
 	this.clearBoard();
 	this.boardMatrix = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+	this.numberOfMoves = 0;
+	document.getElementsByClassName('moves-counter')[0].innerHTML = 0;
 	var t1 = getRandomNumber(16);
 	var t2 = getRandomNumber(16);
 	while (t2 == t1) { t2 = getRandomNumber(16); }
@@ -128,10 +127,9 @@ Board.prototype.beginGame = function() {
 };
 
 Board.prototype.move = function(direction) {
-	var temp = this.boardMatrix;
+	var temp = this.boardMatrix.slice();
 	switch(direction) {
-		case 0:
-			console.log("moving left");
+		case 0: 	// LEFT
 			for (var y = 0; y < 4; ++y) {
 				for (var x = 0; x < 3; ++x) {
 					var count = 0;
@@ -155,8 +153,7 @@ Board.prototype.move = function(direction) {
 				}
 			} break;
 
-		case 1:
-			console.log("moving up");
+		case 1: 	// UP
 			for (var x = 0; x < 4; ++x) {
 				for (var y = 0; y < 3; ++y) {
 					var count = 0;
@@ -180,8 +177,7 @@ Board.prototype.move = function(direction) {
 				}
 			} break;
 
-		case 2:
-			console.log("moving right");
+		case 2: 	// RIGHT
 			for (var y = 0; y < 4; ++y) {
 				for (var x = 3; x > 0; --x) {
 					var count = 0;
@@ -205,8 +201,7 @@ Board.prototype.move = function(direction) {
 				}
 			} break;
 
-		case 3:
-			console.log("moving down");
+		case 3: 	// DOWN
 			for (var x = 0; x < 4; ++x) {
 				for (var y = 3; y > 0; --y) {
 					var count = 0;
@@ -230,8 +225,37 @@ Board.prototype.move = function(direction) {
 				}
 			} break;
 	}
-
-	this.updateBoard();
-
+	if (!this.compareMatrix(temp)) { 
+		this.getNewTile(); 
+		this.updateBoard();
+		++this.numberOfMoves;
+	}
 }
+
+Board.prototype.getNewTile = function() {
+	var empty_tile_positions = [];
+	for (var i = 0; i < BOARD_LENGTH; ++i) {
+		if (this.boardMatrix[i] === 0) { empty_tile_positions.push(i); }
+	}
+	
+	if (empty_tile_positions.length === 0) { return; }
+
+	var new_pos = empty_tile_positions[getRandomNumber(empty_tile_positions.length)];
+	var new_val = (getRandomNumber(2)+1) * 2;
+
+	this.boardMatrix[new_pos] = new_val;
+}
+
+Board.prototype.isFull = function() {
+	for (var i = 0; i < BOARD_LENGTH; ++i) {
+		if (this.boardMatrix[i] == 0) { return false; }
+	}
+	return true;
+}
+
+// Board.prototype.upPossible = function() {
+// 	var temp = this.boardMatrix[:];
+// 	this.move(0);
+// 	if (this.compareMatrix)
+// }
 //----- Board Class end -----//
