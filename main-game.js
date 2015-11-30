@@ -17,7 +17,7 @@ $(document).ready(function() {
 		// }
 		// $('.moving').removeClass('moving');
 		// gameBoard.animateMove(0);
-		gameBoard.animateMove();
+		gameBoard.animateMove(0);
 		// gameBoard.beginGame();
 		// gameStart = true;
 	});
@@ -136,10 +136,10 @@ Board.prototype.updateTile = function(tileNumber) {
 Board.prototype.getNewTile = function() {
 	var empty_tile_positions = [];
 	for (var i = 0; i < BOARD_LENGTH; ++i) {
-		if (this.boardMatrix[i] === 0) { empty_tile_positions.push(i); }
+		if (this.boardMatrix[i] == 0) { empty_tile_positions.push(i); }
 	}
 	
-	if (empty_tile_positions.length === 0) { return; }
+	if (empty_tile_positions.length == 0) { return; }
 
 	var new_pos = empty_tile_positions[getRandomNumber(empty_tile_positions.length)];
 	var new_val = (getRandomNumber(2)+1) * 2;
@@ -147,29 +147,24 @@ Board.prototype.getNewTile = function() {
 	this.boardMatrix[new_pos] = new_val;
 }
 
-Board.prototype.test = function() {
-	alert("done animations");
-	console.log(obj);
-	// this.animations = {};
-	// $('.moving').removeClass('moving');
-	// this.boardMatrix = [0,2,0,0,
-	// 					2,0,0,0,
-	// 					0,0,0,0,
-	// 					0,0,0,0];
-	// this.updateBoard();
-}
-
-Board.prototype.animateMove = function() {
+Board.prototype.animateMove = function(dir) {
 	var obj = this.animations;
 	$('.moving').each(function(index) {
 		var dist = (obj[Object.keys(obj)[index]] * TILE_WIDTH).toString() + 'px';
-		$(this).animate({'right': dist});
+		switch(dir) {
+			case 0: var param = {'right': dist}; break;
+			case 1: var param = {'bottom': dist}; break;
+			case 2: var param = {'left': dist}; break;
+			case 3: var param = {'top': dist}; break;
+		}
+		$(this).animate(param);
 	});
 	var self = this;
 	var wait = function() {
 		var n = $('.moving').queue('fx');
 		if (n == 0) { 
 			clearTimeout(t);
+			console.log("done animations");
 			self.animations = {};
 			$('.moving').removeClass('moving');
 			self.boardMatrix = [0,2,0,0,
@@ -183,12 +178,6 @@ Board.prototype.animateMove = function() {
 		}
 	}
 	wait();
-}
-
-Board.prototype.animateTile = function(tile, steps, dir) {
-	var dist = steps * TILE_WIDTH;
-	var tiles = document.getElementsByClassName('board')[0].children;
-	tile.className += ' moving';
 }
 
 Board.prototype.move = function(direction) {
