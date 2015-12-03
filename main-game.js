@@ -7,19 +7,9 @@ $(document).ready(function() {
 	gameBoard.beginGame();
 
 	$('button').click(function() {
-		// for (var i = 0; i<2; ++ i) {
-		// 	if (i == 0) {
-		// 		$('.moving:eq(0)').animate({left: '110px'});
-		// 	}
-		// 	else {
-		// 		$('.moving:eq(1)').animate({left: '220px'});
-		// 	}
-		// }
-		// $('.moving').removeClass('moving');
 		// gameBoard.animateMove(0);
-		gameBoard.animateMove(0);
-		// gameBoard.beginGame();
-		// gameStart = true;
+		gameBoard.beginGame();
+		gameStart = true;
 	});
 
 	$(document).keydown(function(event) {
@@ -40,11 +30,13 @@ $(document).ready(function() {
 	    		default: break;;
 	    	}
 	    	document.getElementsByClassName('moves-counter')[0].innerHTML = gameBoard.numberOfMoves;
-	    	// gameBoard.printMatrix(gameBoard.boardMatrix);
+	    	gameBoard.printMatrix(gameBoard.boardMatrix);
 	    }
 	});
 });
 
+var BOARD_LENGTH = 16;
+var TILE_WIDTH = 110;
 var colorHash = {
 	0: '#CDC1B4',
 	2: '#EEE4DA',
@@ -63,7 +55,6 @@ var colorHash = {
 var getRandomNumber = function(n) {
 	return Math.floor(Math.random() * n);
 };
-
 var isNotEmpty = function(arr) {
 	var l = arr.length;
 	for (var i = 0; i < l; ++i) {
@@ -72,25 +63,20 @@ var isNotEmpty = function(arr) {
 	return false;
 };
 
-var BOARD_LENGTH = 16;
-var TILE_WIDTH = 110;
-
 //----- Board Class -----//
 function Board() {
 	this.boardMatrix = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+	this.animations = [1,1];
+	// this.animations = [0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0];
 	this.numberOfMoves = 0;
-	this.animations = {
-		2: 1,
-		6: 2
-	};
 };
 
 Board.prototype.beginGame = function() {
 	this.clearBoard();
-	this.boardMatrix = [0,0,2,0,
-						0,0,2,0,
+	this.boardMatrix = [0,0,0,0,
 						0,0,0,0,
-						0,0,0,0];
+						0,0,0,0,
+						2,0,0,0];
 	this.numberOfMoves = 0;
 	document.getElementsByClassName('moves-counter')[0].innerHTML = 0;
 	// var t1 = getRandomNumber(BOARD_LENGTH);
@@ -122,10 +108,10 @@ Board.prototype.updateTile = function(tileNumber) {
 	var children = document.getElementsByClassName('board')[0].children;
 	var tile = children[tileNumber].firstChild;
 	var n = this.boardMatrix[tileNumber];
-	if (n != 0) {
-		tile.className += " moving";
-	}
 	tile.style.backgroundColor = colorHash[n];
+	if (n != 0) {
+		tile.className += ' moving';
+	}
 	if (n > 4) { tile.style.color = 'white'; }
 	else { tile.style.color = '#776E65'; }
 	if (n > 1000) { tile.style.fontSize = '38px'; }
@@ -147,17 +133,19 @@ Board.prototype.getNewTile = function() {
 	this.boardMatrix[new_pos] = new_val;
 }
 
-Board.prototype.animateMove = function(dir) {
+Board.prototype.animateMove = function(direction) {
 	var obj = this.animations;
 	$('.moving').each(function(index) {
-		var dist = (obj[Object.keys(obj)[index]] * TILE_WIDTH).toString() + 'px';
-		switch(dir) {
+		var dist = (3 * TILE_WIDTH).toString() + 'px';
+		switch(direction) {
 			case 0: var param = {'right': dist}; break;
 			case 1: var param = {'bottom': dist}; break;
 			case 2: var param = {'left': dist}; break;
 			case 3: var param = {'top': dist}; break;
 		}
-		$(this).animate(param);
+		// console.log(param);
+		$(this).animate(param, 'fast');
+		// console.log(this);
 	});
 	var self = this;
 	var wait = function() {
@@ -165,13 +153,10 @@ Board.prototype.animateMove = function(dir) {
 		if (n == 0) { 
 			clearTimeout(t);
 			console.log("done animations");
-			self.animations = {};
+			// self.animations = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+			self.resetTilePositions(direction);
 			$('.moving').removeClass('moving');
-			self.boardMatrix = [0,2,0,0,
-								2,0,0,0,
-								0,0,0,0,
-								0,0,0,0];
-			self.updateBoard();
+			self.updateBoard();		
 		}
 		else {
 			var t = setTimeout(wait, 100);
@@ -200,6 +185,7 @@ Board.prototype.move = function(direction) {
 		for (var x = 0; x < 3; ++x) {
 			if (row[x] == 0) {
 				if (z = isNotEmpty(row.slice(x, 4))) {
+					var z;
 					var t = [0,0,0,0];
 					t = t.slice(0, 4 - x);
 					t.splice.apply(t, [0, 4 - x - z].concat(row.slice(x + z, 4)));
@@ -230,10 +216,31 @@ Board.prototype.move = function(direction) {
 		}
 	}
 	if (!this.compareMatrix(prevMatrix)) { 
-		this.getNewTile();
-		this.updateBoard();
+		this.animateMove(direction);
 		++this.numberOfMoves;
+		// this.updateBoard();
+		// this.getNewTile();
 	}
+}
+
+Board.prototype.resetTilePositions = function(direction) {
+	$('.moving').each(function() {
+		// console.log(this);
+		switch(direction) {
+			case 0: 
+				$(this).css('right', '0px');
+				break;
+			case 1: 
+				$(this).css('bottom', '0px');
+				break;
+			case 2: 
+				$(this).css('left', '0px');
+				break;
+			case 3: 
+				$(this).css('top', '0px');
+				break;
+		}
+	});
 }
 
 Board.prototype.compareMatrix = function(m) {

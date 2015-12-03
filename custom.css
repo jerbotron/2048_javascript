@@ -39,23 +39,15 @@ h1 {
     background-color: #CDC1B4;
 }
 
-/* inner container positioned absolutely and holds content */
-.inner {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
-
 .tile {
     width: 100px;
     height: 100px;
     float: left;
     color: #776E65;
+    z-index: -1;
 }
 
-.number {
+.inner-tile {
 	width: inherit;
 	height: inherit;
 	border: 0px;
