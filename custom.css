@@ -44,7 +44,6 @@ h1 {
     height: 100px;
     float: left;
     color: #776E65;
-    z-index: -1;
 }
 
 .inner-tile {

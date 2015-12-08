@@ -7,7 +7,6 @@ $(document).ready(function() {
 	gameBoard.beginGame();
 
 	$('button').click(function() {
-		// gameBoard.animateMove(0);
 		gameBoard.beginGame();
 		gameStart = true;
 	});
@@ -30,7 +29,7 @@ $(document).ready(function() {
 	    		default: break;;
 	    	}
 	    	document.getElementsByClassName('moves-counter')[0].innerHTML = gameBoard.numberOfMoves;
-	    	gameBoard.printMatrix(gameBoard.boardMatrix);
+	    	// gameBoard.printMatrix(gameBoard.boardMatrix);
 	    }
 	});
 });
@@ -66,8 +65,7 @@ var isNotEmpty = function(arr) {
 //----- Board Class -----//
 function Board() {
 	this.boardMatrix = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-	this.animations = [1,1];
-	// this.animations = [0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0];
+	this.animateDists = [];
 	this.numberOfMoves = 0;
 };
 
@@ -76,14 +74,14 @@ Board.prototype.beginGame = function() {
 	this.boardMatrix = [0,0,0,0,
 						0,0,0,0,
 						0,0,0,0,
-						2,0,0,0];
+						0,0,0,0];
 	this.numberOfMoves = 0;
 	document.getElementsByClassName('moves-counter')[0].innerHTML = 0;
-	// var t1 = getRandomNumber(BOARD_LENGTH);
-	// var t2 = getRandomNumber(BOARD_LENGTH);
-	// while (t2 == t1) { t2 = getRandomNumber(BOARD_LENGTH); }
-	// this.boardMatrix[t1] = (getRandomNumber(2)+1) * 2;
-	// this.boardMatrix[t2] = (getRandomNumber(2)+1) * 2;
+	var t1 = getRandomNumber(BOARD_LENGTH);
+	var t2 = getRandomNumber(BOARD_LENGTH);
+	while (t2 == t1) { t2 = getRandomNumber(BOARD_LENGTH); }
+	this.boardMatrix[t1] = (getRandomNumber(2)+1) * 2;
+	this.boardMatrix[t2] = (getRandomNumber(2)+1) * 2;
 	this.updateBoard();
 };
 
@@ -96,6 +94,7 @@ Board.prototype.clearBoard = function() {
 };
 
 Board.prototype.updateBoard = function() {
+	$('.moving').removeClass('moving');
 	this.clearBoard();
 	for (var i = 0; i < BOARD_LENGTH; ++i) {
 		if (this.boardMatrix[i] != 0) {
@@ -109,9 +108,6 @@ Board.prototype.updateTile = function(tileNumber) {
 	var tile = children[tileNumber].firstChild;
 	var n = this.boardMatrix[tileNumber];
 	tile.style.backgroundColor = colorHash[n];
-	if (n != 0) {
-		tile.className += ' moving';
-	}
 	if (n > 4) { tile.style.color = 'white'; }
 	else { tile.style.color = '#776E65'; }
 	if (n > 1000) { tile.style.fontSize = '38px'; }
@@ -133,41 +129,10 @@ Board.prototype.getNewTile = function() {
 	this.boardMatrix[new_pos] = new_val;
 }
 
-Board.prototype.animateMove = function(direction) {
-	var obj = this.animations;
-	$('.moving').each(function(index) {
-		var dist = (3 * TILE_WIDTH).toString() + 'px';
-		switch(direction) {
-			case 0: var param = {'right': dist}; break;
-			case 1: var param = {'bottom': dist}; break;
-			case 2: var param = {'left': dist}; break;
-			case 3: var param = {'top': dist}; break;
-		}
-		// console.log(param);
-		$(this).animate(param, 'fast');
-		// console.log(this);
-	});
-	var self = this;
-	var wait = function() {
-		var n = $('.moving').queue('fx');
-		if (n == 0) { 
-			clearTimeout(t);
-			console.log("done animations");
-			// self.animations = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-			self.resetTilePositions(direction);
-			$('.moving').removeClass('moving');
-			self.updateBoard();		
-		}
-		else {
-			var t = setTimeout(wait, 100);
-		}
-	}
-	wait();
-}
-
 Board.prototype.move = function(direction) {
 	var prevMatrix = this.boardMatrix.slice();
 	for (var y = 0; y < 4; ++y) {
+		var d = [0,0,0,0];
 		switch(direction) {
 			case 0:
 				var row = this.getRow(y);
@@ -182,13 +147,25 @@ Board.prototype.move = function(direction) {
 				var row = this.getColumn(y).reverse();
 				break;
 		}
+		// console.log("row = " + row.toString());
 		for (var x = 0; x < 3; ++x) {
+			var z = 0;
 			if (row[x] == 0) {
 				if (z = isNotEmpty(row.slice(x, 4))) {
-					var z;
 					var t = [0,0,0,0];
 					t = t.slice(0, 4 - x);
+					var non_zero_section = row.slice(x + z, 4);
+					// console.log("nzs = " + non_zero_section.toString());
 					t.splice.apply(t, [0, 4 - x - z].concat(row.slice(x + z, 4)));
+					for (var n = 0; n < non_zero_section.length; ++n) {
+						if (non_zero_section[n]) {
+							// console.log('x = ' + x);
+							// console.log('z = ' + z);
+							// console.log('n = ' + n);
+							d[n + x + z] += z;
+						}
+					}
+					// console.log("d = " + d.toString());
 					row.splice.apply(row, [x, 4 - x].concat(t));
 				}
 				else { break; }
@@ -198,46 +175,129 @@ Board.prototype.move = function(direction) {
 			if (row[x] == row[j]) {
 				row[x] += row[j]
 				row[j] = 0;
+				// console.log('j = ' + j);
+				// console.log('x = ' + x);
+				// console.log('z = ' + z);
+				d[j] += j - x;
 			}
+
 		}
 		switch(direction) {
 			case 0:
-				this.insertRow(y, row);
+				this.insertRow(this.boardMatrix, y, row);
+				this.insertRow(this.animateDists, y, d);
 				break;
 			case 1:
-				this.insertColumn(y, row);
+				this.insertColumn(this.boardMatrix, y, row);
+				this.insertColumn(this.animateDists, y, d);
 				break;
 			case 2:
-				this.insertRow(y, row.reverse());
+				this.insertRow(this.boardMatrix, y, row.reverse());
+				this.insertRow(this.animateDists, y, d.reverse());
 				break;
 			case 3:
-				this.insertColumn(y, row.reverse());
+				this.insertColumn(this.boardMatrix, y, row.reverse());
+				this.insertColumn(this.animateDists, y, d.reverse());
 				break;
 		}
+		// this.animateDists.concat(d);
+		// this.animateDists = this.animateDists.concat(d);
+		// console.log("final d = " + d.toString());
+		// console.log(this.animateDists);
 	}
+	this.printMatrix(this.animateDists);
+	// this.animateDists = [];
 	if (!this.compareMatrix(prevMatrix)) { 
 		this.animateMove(direction);
 		++this.numberOfMoves;
+		this.getNewTile();
 		// this.updateBoard();
-		// this.getNewTile();
 	}
+}
+
+Board.prototype.animateMove = function(direction) {
+	var self = this;
+	$('.inner-tile').each(function(index) {
+		// if (self.animateDists[index]){
+		this.className += ' moving';
+		// }
+	})
+	var obj = this.animateDists;
+	$('.moving').each(function(index) {
+		var dist = (obj[index] * TILE_WIDTH).toString() + 'px';
+		switch(direction) {
+			case 0: var param = {'right': dist}; break;
+			case 1: var param = {'bottom': dist}; break;
+			case 2: var param = {'left': dist}; break;
+			case 3: var param = {'top': dist}; break;
+		}
+		$(this).animate(param, 'slow');
+	});
+	var wait = function() {
+		var n = $('.moving').queue('fx');
+		if (n == 0) { 
+			clearTimeout(t);
+			console.log("done animations");
+			// self.animateDists = [];
+			self.resetTilePositions(direction);
+			self.updateBoard();		
+		}
+		else {
+			var t = setTimeout(wait, 100);
+		}
+	}
+	wait();
+}
+
+Board.prototype.getMoveDistances = function(arr) {
+	console.log(arr.toString());
+	var d = [0,0,0,0];
+	var matched = 0;
+	for (var i = 0; i < 3; ++i) {
+		var f = arr[i];
+		if (f) {
+			for (var j = i+1; j < 4; ++j) {
+				var c = arr[j];
+				if (c == f && !matched) { 
+					d[j] += 1;
+					matched = 1;
+					arr[j] = 0;
+					arr[i] *= 2;
+				}
+				else if (arr[j-1] == 0 && c) {
+					d[j] += 1;
+				}
+			}
+			if (matched) {
+				++i;
+			}
+		}
+		else {
+			for (var j = i+1; j < 4; ++j) {
+				if (arr[j]) {
+					d[j] += 1;
+				}
+			}
+		}
+	}
+	console.log(d.toString());
+	return arr;
 }
 
 Board.prototype.resetTilePositions = function(direction) {
 	$('.moving').each(function() {
-		// console.log(this);
 		switch(direction) {
 			case 0: 
-				$(this).css('right', '0px');
+				$(this).css('right', "");
 				break;
-			case 1: 
-				$(this).css('bottom', '0px');
+			case 1:
+				$(this).css('bottom', "");
 				break;
 			case 2: 
-				$(this).css('left', '0px');
+				$(this).css('left', "");
 				break;
-			case 3: 
-				$(this).css('top', '0px');
+			case 3:
+				$(this).css('top', "");
 				break;
 		}
 	});
@@ -266,9 +326,9 @@ Board.prototype.getColumn = function(c) {
 	return arr;
 }
 
-Board.prototype.insertColumn = function(c, newColumn) {
+Board.prototype.insertColumn = function(m, c, newColumn) {
 	for (var i = 0; i < 4; ++i) {
-		this.boardMatrix[c + 4 * i] = newColumn[i];
+		m[c + 4 * i] = newColumn[i];
 	}
 }
 
@@ -276,8 +336,8 @@ Board.prototype.getRow = function(r) {
 	return this.boardMatrix.slice(4 * r, 4 + 4 * r)
 }
 
-Board.prototype.insertRow = function(r, newRow) {
-	this.boardMatrix.splice.apply(this.boardMatrix, [4 * r, 4].concat(newRow));
+Board.prototype.insertRow = function(m, r, newRow) {
+	m.splice.apply(m, [4 * r, 4].concat(newRow));
 }
 
 Board.prototype.printMatrix = function(m) {
