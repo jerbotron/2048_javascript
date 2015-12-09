@@ -4,32 +4,57 @@
 $(document).ready(function() {
 	var gameBoard = new Board();
 	var gameStart = true;
+	var direction;
 	gameBoard.beginGame();
 
-	$('button').click(function() {
+	$('#startButton').click(function() {
 		gameBoard.beginGame();
 		gameStart = true;
+	});
+
+	$('#undoButton').click(function() {
+		gameBoard.boardMatrix = gameBoard.prevMatrix.slice();
+		gameBoard.updateBoard();
 	});
 
 	$(document).keydown(function(event) {
 		if (gameStart) {
 	    	switch(event.which) {
 	    		case 37: 							// left
+	    			direction = 0;
 	    			gameBoard.move(0);
 	    			break;
 	    		case 38: 							// up
+		    		direction = 1;
 		    		gameBoard.move(1);
 		    		break;
 	    		case 39: 							// right
+		    		direction = 2;
 		    		gameBoard.move(2);
 		    		break;
 	    		case 40: 							// down
+		    		direction = 3;
 		    		gameBoard.move(3);
 		    		break;
 	    		default: break;;
 	    	}
+	    	if (!compareMatrices(gameBoard.boardMatrix, gameBoard.prevMatrix)) { 
+				var children = document.getElementsByClassName('board')[0].children;
+				for (var i = 0; i < children.length; ++i) {
+					if (gameBoard.animateDists[i]) {
+						children[i].firstChild.className += ' moving';
+					}
+				}
+				var moves = removeZeros(gameBoard.animateDists);
+				gameBoard.animateMove(direction, moves);
+				++gameBoard.numberOfMoves;
+			}
 	    	document.getElementsByClassName('moves-counter')[0].innerHTML = gameBoard.numberOfMoves;
 	    	// gameBoard.printMatrix(gameBoard.boardMatrix);
+	    	if (gameBoard.deadBoard()) {
+	    		console.log("GAME OVER!");
+	    		gameStart = false;
+	    	}
 	    }
 	});
 });
@@ -61,11 +86,30 @@ var isNotEmpty = function(arr) {
 	}
 	return false;
 };
+var removeZeros = function(arr) {
+	var l = arr.length;
+	var out = [];
+	for (var i = 0; i < l; ++i) {
+		if (arr[i]) {
+			out.push(arr[i]);
+		}
+	}
+	return out;
+}
+var compareMatrices = function(m1, m2) {
+	if (m1.length != m2.length) { return false; }
+	var l = m1.length;
+	for (var i = 0; i < l; ++i) {
+		if (m1[i] != m2[i]) { return false; }
+	}
+	return true;
+}
 
 //----- Board Class -----//
 function Board() {
 	this.boardMatrix = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-	this.animateDists = [];
+	this.prevMatrix = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+	this.animateDists = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 	this.numberOfMoves = 0;
 };
 
@@ -87,7 +131,7 @@ Board.prototype.beginGame = function() {
 
 Board.prototype.clearBoard = function() {
 	var children = document.getElementsByClassName('board')[0].children;
-	for (var i = 0; i < children.length; ++i) {
+	for (var i = 0; i < BOARD_LENGTH; ++i) {
 		children[i].firstChild.innerHTML = '';
 		children[i].firstChild.style.backgroundColor = colorHash[0];
 	};
@@ -130,7 +174,8 @@ Board.prototype.getNewTile = function() {
 }
 
 Board.prototype.move = function(direction) {
-	var prevMatrix = this.boardMatrix.slice();
+	// this.printMatrix(this.boardMatrix);
+	this.prevMatrix = this.boardMatrix.slice();
 	for (var y = 0; y < 4; ++y) {
 		var d = [0,0,0,0];
 		switch(direction) {
@@ -148,6 +193,7 @@ Board.prototype.move = function(direction) {
 				break;
 		}
 		// console.log("row = " + row.toString());
+		var offset = 0;
 		for (var x = 0; x < 3; ++x) {
 			var z = 0;
 			if (row[x] == 0) {
@@ -162,7 +208,7 @@ Board.prototype.move = function(direction) {
 							// console.log('x = ' + x);
 							// console.log('z = ' + z);
 							// console.log('n = ' + n);
-							d[n + x + z] += z;
+							d[x + z + n + offset] += z;
 						}
 					}
 					// console.log("d = " + d.toString());
@@ -170,6 +216,7 @@ Board.prototype.move = function(direction) {
 				}
 				else { break; }
 			}
+			// console.log("row = " + row.toString());
 			var j = x + 1;
 			while (row[j] == 0 && j < 3) { ++j; }
 			if (row[x] == row[j]) {
@@ -178,7 +225,14 @@ Board.prototype.move = function(direction) {
 				// console.log('j = ' + j);
 				// console.log('x = ' + x);
 				// console.log('z = ' + z);
-				d[j] += j - x;
+				if (z-x > 0) {
+					d[x + j + z] += j - x;
+					++offset;
+				}
+				else {
+					d[j + z] += j - x;
+				}
+				// console.log("d = " + d.toString());
 			}
 
 		}
@@ -200,88 +254,38 @@ Board.prototype.move = function(direction) {
 				this.insertColumn(this.animateDists, y, d.reverse());
 				break;
 		}
-		// this.animateDists.concat(d);
-		// this.animateDists = this.animateDists.concat(d);
 		// console.log("final d = " + d.toString());
-		// console.log(this.animateDists);
 	}
-	this.printMatrix(this.animateDists);
-	// this.animateDists = [];
-	if (!this.compareMatrix(prevMatrix)) { 
-		this.animateMove(direction);
-		++this.numberOfMoves;
-		this.getNewTile();
-		// this.updateBoard();
-	}
+	// this.printMatrix(this.animateDists);
 }
 
-Board.prototype.animateMove = function(direction) {
+Board.prototype.animateMove = function(direction, moves) {
 	var self = this;
-	$('.inner-tile').each(function(index) {
-		// if (self.animateDists[index]){
-		this.className += ' moving';
-		// }
-	})
-	var obj = this.animateDists;
 	$('.moving').each(function(index) {
-		var dist = (obj[index] * TILE_WIDTH).toString() + 'px';
+		var dist = (moves[index] * TILE_WIDTH).toString() + 'px';
 		switch(direction) {
 			case 0: var param = {'right': dist}; break;
 			case 1: var param = {'bottom': dist}; break;
 			case 2: var param = {'left': dist}; break;
 			case 3: var param = {'top': dist}; break;
 		}
-		$(this).animate(param, 'slow');
+		$(this).animate(param, 'fast');
 	});
 	var wait = function() {
 		var n = $('.moving').queue('fx');
 		if (n == 0) { 
 			clearTimeout(t);
 			console.log("done animations");
-			// self.animateDists = [];
 			self.resetTilePositions(direction);
-			self.updateBoard();		
+			self.getNewTile();
+			self.updateBoard();	
+			self.printMatrix(self.boardMatrix);
 		}
 		else {
-			var t = setTimeout(wait, 100);
+			var t = setTimeout(wait, 50);
 		}
 	}
 	wait();
-}
-
-Board.prototype.getMoveDistances = function(arr) {
-	console.log(arr.toString());
-	var d = [0,0,0,0];
-	var matched = 0;
-	for (var i = 0; i < 3; ++i) {
-		var f = arr[i];
-		if (f) {
-			for (var j = i+1; j < 4; ++j) {
-				var c = arr[j];
-				if (c == f && !matched) { 
-					d[j] += 1;
-					matched = 1;
-					arr[j] = 0;
-					arr[i] *= 2;
-				}
-				else if (arr[j-1] == 0 && c) {
-					d[j] += 1;
-				}
-			}
-			if (matched) {
-				++i;
-			}
-		}
-		else {
-			for (var j = i+1; j < 4; ++j) {
-				if (arr[j]) {
-					d[j] += 1;
-				}
-			}
-		}
-	}
-	console.log(d.toString());
-	return arr;
 }
 
 Board.prototype.resetTilePositions = function(direction) {
@@ -303,15 +307,7 @@ Board.prototype.resetTilePositions = function(direction) {
 	});
 }
 
-Board.prototype.compareMatrix = function(m) {
-	if (m.length != BOARD_LENGTH) { return false; }
-	for (var i = 0; i < BOARD_LENGTH; ++i) {
-		if (this.boardMatrix[i] != m[i]) { return false; }
-	}
-	return true;
-}
-
-Board.prototype.isFull = function() {
+Board.prototype.boardFull = function() {
 	for (var i = 0; i < BOARD_LENGTH; ++i) {
 		if (this.boardMatrix[i] == 0) { return false; }
 	}
@@ -338,6 +334,20 @@ Board.prototype.getRow = function(r) {
 
 Board.prototype.insertRow = function(m, r, newRow) {
 	m.splice.apply(m, [4 * r, 4].concat(newRow));
+}
+
+Board.prototype.deadBoard = function() {
+	if (!this.boardFull()) {return false; }
+	var temp = this.boardMatrix.slice();
+	this.move(0);
+	if (!compareMatrices(temp, this.boardMatrix)) { return false; }
+	this.move(1);
+	if (!compareMatrices(temp, this.boardMatrix)) { return false; }
+	this.move(2);
+	if (!compareMatrices(temp, this.boardMatrix)) { return false; }
+	this.move(3);
+	if (!compareMatrices(temp, this.boardMatrix)) { return false; }
+	return true;
 }
 
 Board.prototype.printMatrix = function(m) {

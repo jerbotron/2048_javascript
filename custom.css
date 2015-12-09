@@ -16,7 +16,7 @@ h1 {
 	display: inline-block;
 }
 
-.start-button {
+button {
 	float: right;
 }
 
@@ -26,10 +26,6 @@ h1 {
 	float: right;
 }
 
-.moves-counter { 
-}
-
-/* outer container will define aspect ratio */
 .board {
 	margin-top: 10%;
 	border: 10px solid #BBADA0;
