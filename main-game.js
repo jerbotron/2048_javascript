@@ -52,7 +52,7 @@ $(document).ready(function() {
 	    	document.getElementsByClassName('moves-counter')[0].innerHTML = gameBoard.numberOfMoves;
 	    	// gameBoard.printMatrix(gameBoard.boardMatrix);
 	    	if (gameBoard.deadBoard()) {
-	    		console.log("GAME OVER!");
+	    		alert("GAME OVER!");
 	    		gameStart = false;
 	    	}
 	    }
@@ -275,11 +275,11 @@ Board.prototype.animateMove = function(direction, moves) {
 		var n = $('.moving').queue('fx');
 		if (n == 0) { 
 			clearTimeout(t);
-			console.log("done animations");
+			// console.log("done animations");
 			self.resetTilePositions(direction);
 			self.getNewTile();
 			self.updateBoard();	
-			self.printMatrix(self.boardMatrix);
+			// self.printMatrix(self.boardMatrix);
 		}
 		else {
 			var t = setTimeout(wait, 50);
