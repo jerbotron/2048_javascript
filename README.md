@@ -1,4 +1,4 @@
-# 2048 Javscript Webapp
+# 2048 Javascript Webapp
 
 This is a re-make of the popular 2028 block puzzle game originally seen here: https://gabrielecirulli.github.io/2048/.
 
